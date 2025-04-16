@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21工业机器人高职2班</title>
+    <!-- 链接 CSS 文件 -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 注意：这里没有 <style> 标签了 -->
+</head>
+<body>
+
+    <!-- 登录界面 -->
+    <section id="login-section">
+        <!-- 将登录表单也放入 container 以便在大屏幕上居中 -->
+        <div class="container">
+            <h2>同学请登录</h2>
+            <div class="form-group">
+                <label for="username">学号:</label>
+                <input type="text" id="username" name="username" required placeholder="请输入你的学号">
+            </div>
+            <div class="form-group">
+                <label for="password">密码:</label>
+                <input type="password" id="password" name="password" required placeholder="请输入密码">
+            </div>
+            <button id="loginButton">登录</button>
+            <p id="login-error"></p> <!-- 显示登录错误信息 -->
+        </div>
+    </section>
+
+    <!-- 主内容区域，默认隐藏 -->
+    <div id="main-content" class="hidden">
+        <!-- 使用容器来控制主内容的宽度和居中 -->
+        <div class="container">
+            <header>
+                <h1>21工业机器人高职2班</h1>
+                <!-- 欢迎信息和登出按钮 -->
+                <p>
+                    制作者：Orsino（少）
+                    <span id="welcome-user" style="margin-left: 20px; font-weight: bold;"></span>
+                    <button id="logoutButton" class="hidden" style="padding: 3px 8px; font-size: 0.8em; margin-left: 10px; cursor: pointer; background-color: #dc3545; color: white; border: none; border-radius: 3px;">登出</button>
+                </p>
+            </header>
+
+            <section class="progress-section">
+                <h2>五年学习生涯进度</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar">0%</div>
+                </div>
+                <!-- 显示剩余时间 -->
+                <p id="time-remaining">正在计算剩余时间...</p>
+            </section>
+
+            <!-- 分享区域 -->
+            <section class="share-section">
+                <h2>分享你的瞬间</h2>
+                <textarea id="memoryText" rows="4" placeholder="在这里写下你的故事、感想..."></textarea>
+                <br>
+                <label for="memoryImage">添加图片 (可选，暂无上传功能): </label>
+                <!-- 保留元素以便JS选择, 但实际上传功能待后端实现 -->
+                <input type="file" id="memoryImage" accept="image/*">
+                <br>
+                <button id="shareButton">发布分享</button>
+                <p class="info-text">(注意：当前为前端演示，发布内容仅在本地临时显示，刷新后消失)</p>
+            </section>
+
+            <!-- 回忆展示区 -->
+            <section class="memories-section">
+                <h2>同学们的足迹</h2>
+                <!-- 这个 div 用于 JS 动态添加新的帖子 -->
+                <div id="memory-feed">
+                    <!-- 保留一些静态的示例帖子，以便在没有JS或JS出错时仍有内容 -->
+                    <article class="memory-post">
+                      
+                    </article>
+                </div>
+            </section>
+
+            <footer>
+                <p>© <span id="currentYear"></span> 21工业机器人高职2班 版权所有</p>
+                <p>为我们独一无二的五年喝彩！</p>
+            </footer>
+        </div> <!-- /.container for main content -->
+    </div> <!-- /#main-content -->
+
+    <!-- 引入 JavaScript 文件，确保在 body 结束前引入 -->
+    <script src="script.js"></script>
+    <!-- 注意：这里没有内联 <script> 标签了 -->
+</body>
+</html>
