@@ -6,7 +6,6 @@
     <title>21工业机器人高职2班</title>
     <!-- 链接 CSS 文件 -->
     <link rel="stylesheet" href="style.css">
-    <!-- 注意：这里没有 <style> 标签了 -->
 </head>
 <body>
 
@@ -56,12 +55,11 @@
                 <h2>分享你的瞬间</h2>
                 <textarea id="memoryText" rows="4" placeholder="在这里写下你的故事、感想..."></textarea>
                 <br>
-                <label for="memoryImage">添加图片 (可选，暂无上传功能): </label>
-                <!-- 保留元素以便JS选择, 但实际上传功能待后端实现 -->
+                <label for="memoryImage">添加图片 (可选): </label>
                 <input type="file" id="memoryImage" accept="image/*">
                 <br>
                 <button id="shareButton">发布分享</button>
-                <p class="info-text">(注意：当前为前端演示，发布内容仅在本地临时显示，刷新后消失)</p>
+                <p class="info-text">(所有分享对全体同学可见)</p>
             </section>
 
             <!-- 回忆展示区 -->
@@ -69,10 +67,7 @@
                 <h2>同学们的足迹</h2>
                 <!-- 这个 div 用于 JS 动态添加新的帖子 -->
                 <div id="memory-feed">
-                    <!-- 保留一些静态的示例帖子，以便在没有JS或JS出错时仍有内容 -->
-                    <article class="memory-post">
-                      
-                    </article>
+                    <!-- 静态示例会被JS动态加载的内容覆盖 -->
                 </div>
             </section>
 
@@ -84,7 +79,6 @@
     </div> <!-- /#main-content -->
 
     <!-- 引入 JavaScript 文件，确保在 body 结束前引入 -->
-    <script src="script.js"></script>
-    <!-- 注意：这里没有内联 <script> 标签了 -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>

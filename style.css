@@ -131,6 +131,11 @@ header p {
     text-align: center;
     transform: scale(1);
     transition: all 0.5s ease-out; /* 隐藏/显示动画 */
+    background: rgba(255, 255, 255, 0.6); /* 半透明背景 */
+    backdrop-filter: blur(15px); /* 核心：模糊背景 */
+    -webkit-backdrop-filter: blur(15px); /* 兼容性 */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* 加一个微妙的边框 */
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* 新的阴影效果 */
 }
 #login-section.hidden { /* 隐藏时的状态 */
     transform: scale(0.9);

@@ -1,18 +1,26 @@
-// script.js
+// script.js (最终功能版)
 
-// --- 全局变量和配置 ---
-// !!! 极其不安全的做法，仅用于前端演示 !!!
-const validUsernames = [];
-for (let i = 1; i <= 40; i++) {
-    validUsernames.push(`2178022${i < 10 ? '0' + i : i}`);
-}
-const validPassword = '666666'; // 固定密码
+// 1. 从 Firebase 的 CDN 引入我们需要的模块
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-// !!! 五年学习生涯日期 !!!
-const startDate = new Date('2021-09-01');
-const endDate = new Date('2026-07-01');
+// 2. 你的 Firebase 配置 (保持不变)
+const firebaseConfig = {
+  apiKey: "AIzaSyCGA3fyot7SRZHLyqfDvGB0OqZZ9NiCJAM",
+  authDomain: "sample-firebase-ai-app-5d3ba.firebaseapp.com",
+  projectId: "sample-firebase-ai-app-5d3ba",
+  storageBucket: "sample-firebase-ai-app-5d3ba.firebasestorage.app",
+  messagingSenderId: "402674375747",
+  appId: "1:402674375747:web:099aaab5d8a2ceff01c8f6"
+};
 
-// --- DOM 元素获取 ---
+// 3. 初始化 Firebase 服务
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// --- DOM 元素获取 (保持不变) ---
 const loginSection = document.getElementById('login-section');
 const mainContent = document.getElementById('main-content');
 const usernameInput = document.getElementById('username');
@@ -21,193 +29,174 @@ const loginButton = document.getElementById('loginButton');
 const loginError = document.getElementById('login-error');
 const logoutButton = document.getElementById('logoutButton');
 const welcomeUserSpan = document.getElementById('welcome-user');
-
 const progressBarElement = document.getElementById('progressBar');
 const timeRemainingElement = document.getElementById('time-remaining');
 const currentYearSpan = document.getElementById('currentYear');
-
 const memoryTextInput = document.getElementById('memoryText');
 const shareButton = document.getElementById('shareButton');
 const memoryFeed = document.getElementById('memory-feed');
-const memoryImageInput = document.getElementById('memoryImage'); // 获取图片输入元素
+const memoryImageInput = document.getElementById('memoryImage');
 
-// --- 函数定义 ---
+// --- 日期和进度条 (保持不变) ---
+const startDate = new Date('2021-09-01');
+const endDate = new Date('2026-07-01');
 
-// 更新进度条和剩余时间
 function updateProgressAndTime() {
     const now = new Date();
     const totalDuration = endDate.getTime() - startDate.getTime();
     const elapsedDuration = now.getTime() - startDate.getTime();
-
     let progressPercentage = 0;
-    if (totalDuration <= 0) { // 防止除以0或负数
-        progressPercentage = 100;
-    } else if (now >= endDate) {
-        progressPercentage = 100;
-    } else if (now > startDate) {
-        progressPercentage = Math.min(100, (elapsedDuration / totalDuration) * 100);
-    }
-
+    if (totalDuration <= 0) { progressPercentage = 100; }
+    else if (now >= endDate) { progressPercentage = 100; }
+    else if (now > startDate) { progressPercentage = Math.min(100, (elapsedDuration / totalDuration) * 100); }
     if (progressBarElement) {
         progressBarElement.style.width = progressPercentage.toFixed(2) + '%';
         progressBarElement.textContent = progressPercentage.toFixed(1) + '%';
     }
-
     if (timeRemainingElement) {
-        if (now >= endDate) {
-            timeRemainingElement.textContent = "五年时光已圆满！";
-        } else if (now < startDate) {
-            timeRemainingElement.textContent = "旅程即将开始...";
-        } else {
-            const remainingMilliseconds = endDate.getTime() - now.getTime();
-            const remainingDays = Math.ceil(remainingMilliseconds / (1000 * 60 * 60 * 24));
+        if (now >= endDate) { timeRemainingElement.textContent = "五年时光已圆满！"; }
+        else if (now < startDate) { timeRemainingElement.textContent = "旅程即将开始..."; }
+        else {
+            const remainingDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
             timeRemainingElement.textContent = `剩余约 ${remainingDays} 天，请珍惜！`;
         }
     }
 }
 
-// 更新页脚年份
 function updateFooterYear() {
     if (currentYearSpan) {
         currentYearSpan.textContent = new Date().getFullYear();
     }
 }
 
-// 处理登录
-function handleLogin(event) {
-    event.preventDefault(); // 阻止表单默认提交
+// --- 【全新】Firebase 核心功能 ---
+
+// 1. 监听认证状态变化 (这是整个应用的总开关)
+onAuthStateChanged(auth, user => {
+    if (user) {
+        // 用户已登录
+        console.log('用户已登录:', user);
+        loginSection.classList.add('hidden');
+        mainContent.classList.remove('hidden');
+        logoutButton.classList.remove('hidden');
+        // 从 user.email 中提取学号，例如 "217802201@example.com" -> "217802201"
+        const studentId = user.email.split('@')[0];
+        if (welcomeUserSpan) welcomeUserSpan.textContent = `欢迎，${studentId}`;
+
+        // 初始化主页内容
+        updateProgressAndTime();
+        updateFooterYear();
+        fetchMemories(); // 登录后开始获取分享内容
+    } else {
+        // 用户未登录或已登出
+        console.log('用户未登录');
+        mainContent.classList.add('hidden');
+        logoutButton.classList.add('hidden');
+        loginSection.classList.remove('hidden');
+        if (welcomeUserSpan) welcomeUserSpan.textContent = '';
+        memoryFeed.innerHTML = ''; // 清空分享内容
+    }
+});
+
+// 2. 【全新】处理登录
+async function handleLogin(event) {
+    event.preventDefault();
+    loginError.textContent = ''; // 清空之前的错误
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
 
-    if (validUsernames.includes(username) && password === validPassword) {
-        // 登录成功
-        loginSection.classList.add('hidden');
-        mainContent.classList.remove('hidden');
-        logoutButton.classList.remove('hidden');
-        if(welcomeUserSpan) welcomeUserSpan.textContent = `欢迎，${username}`;
-        loginError.textContent = ''; // 清除错误信息
-        // 使用 sessionStorage 存储登录状态和用户名 (关闭浏览器标签页即失效)
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('loggedInUser', username);
-        // 更新进度条等主页面内容
-        updateProgressAndTime();
-        updateFooterYear();
-    } else {
-        // 登录失败
-        loginError.textContent = '学号或密码错误，请重试！';
-        sessionStorage.removeItem('isLoggedIn');
-        sessionStorage.removeItem('loggedInUser');
-    }
-}
-
-// 处理登出
-function handleLogout() {
-    sessionStorage.removeItem('isLoggedIn');
-    sessionStorage.removeItem('loggedInUser');
-    mainContent.classList.add('hidden');
-    logoutButton.classList.add('hidden');
-    loginSection.classList.remove('hidden');
-    if(welcomeUserSpan) welcomeUserSpan.textContent = ''; // 清空欢迎信息
-    usernameInput.value = ''; // 清空输入框
-    passwordInput.value = ''; // 清空输入框
-}
-
-// 处理发布分享 (前端模拟)
-function handleShare(event) {
-    event.preventDefault(); // 阻止可能的表单提交行为
-    const text = memoryTextInput.value.trim();
-    const imageFile = memoryImageInput.files[0]; // 获取选中的文件
-    const currentUser = sessionStorage.getItem('loggedInUser') || '匿名用户'; // 获取当前登录用户
-
-    if (!text && !imageFile) {
-        alert('请输入内容或选择图片后再发布！');
+    if (!username || !password) {
+        loginError.textContent = '请输入学号和密码。';
         return;
     }
 
-    const timestamp = new Date().toLocaleString('zh-CN'); // 获取当前时间
+    // 将学号包装成Firebase认证需要的邮箱格式
+    const email = `${username}@example.com`;
 
-    // 创建新的帖子元素
-    const postElement = document.createElement('article');
-    postElement.classList.add('memory-post');
-
-    let imageHTML = '';
-    if (imageFile) {
-        // 使用 FileReader 在前端预览图片 (注意：这不会上传图片)
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // 图片加载完成后再完整构建帖子内容
-            imageHTML = `<img src="${e.target.result}" alt="用户分享的图片">`;
-            postElement.innerHTML = `
-                <p class="author">${currentUser}</p>
-                <p class="timestamp">${timestamp}</p>
-                ${text ? `<p class="content-text">${text.replace(/\n/g, '<br>')}</p>` : ''} <!-- 处理换行 -->
-                ${imageHTML}
-            `;
-             // 将新帖子添加到信息流的顶部
-            memoryFeed.prepend(postElement);
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // 登录成功，onAuthStateChanged 会自动处理后续UI变化
+    } catch (error) {
+        console.error("登录失败:", error.code);
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            loginError.textContent = '学号或密码错误，请重试！';
+        } else {
+            loginError.textContent = '登录时发生未知错误。';
         }
-        reader.readAsDataURL(imageFile); // 读取文件内容为 Data URL
-    } else {
-         // 如果没有图片，直接构建帖子内容
-         postElement.innerHTML = `
-            <p class="author">${currentUser}</p>
-            <p class="timestamp">${timestamp}</p>
-            ${text ? `<p class="content-text">${text.replace(/\n/g, '<br>')}</p>` : ''} <!-- 处理换行 -->
-        `;
-         // 将新帖子添加到信息流的顶部
-        memoryFeed.prepend(postElement);
     }
-
-
-    // 清空输入框和文件选择
-    memoryTextInput.value = '';
-    memoryImageInput.value = null; // 清空文件选择
 }
 
-// --- 事件监听器 ---
+// 3. 【全新】处理登出
+async function handleLogout() {
+    try {
+        await signOut(auth);
+        // 登出成功，onAuthStateChanged 会自动处理后续UI变化
+        usernameInput.value = '';
+        passwordInput.value = '';
+    } catch (error) {
+        console.error("登出失败:", error);
+    }
+}
 
-// 页面加载完成后执行初始化检查
-document.addEventListener('DOMContentLoaded', () => {
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-    const loggedInUser = sessionStorage.getItem('loggedInUser');
+// 4. 【全新】处理发布分享 (保存到 Firestore)
+async function handleShare(event) {
+    event.preventDefault();
+    const text = memoryTextInput.value.trim();
+    const user = auth.currentUser;
 
-    if (isLoggedIn && loggedInUser) {
-        // 如果已登录，直接显示主内容
-        loginSection.classList.add('hidden');
-        mainContent.classList.remove('hidden');
-        logoutButton.classList.remove('hidden');
-        if(welcomeUserSpan) welcomeUserSpan.textContent = `欢迎，${loggedInUser}`;
-        updateProgressAndTime(); // 更新进度条
-        updateFooterYear(); // 更新年份
-    } else {
-        // 未登录，显示登录界面
-        loginSection.classList.remove('hidden');
-        mainContent.classList.add('hidden');
+    if (!text || !user) {
+        alert('请输入内容后再发布！');
+        return;
     }
 
-    // 为登录按钮添加事件监听
-    if (loginButton) {
-        loginButton.addEventListener('click', handleLogin);
-    }
-    // 为密码框添加回车登录事件监听
-    if (passwordInput) {
-        passwordInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                handleLogin(event);
-            }
+    try {
+        // "memories" 是数据库里集合的名称
+        await addDoc(collection(db, "memories"), {
+            text: text,
+            authorId: user.email.split('@')[0], // 只保存学号
+            createdAt: new Date() // 使用服务器时间戳更佳，但本地时间也行
         });
+        memoryTextInput.value = ''; // 清空输入框
+        memoryImageInput.value = null; // 清空文件选择
+    } catch (error) {
+        console.error("发布失败: ", error);
+        alert('发布失败，请检查网络后重试。');
     }
+}
 
-    // 为登出按钮添加事件监听
-    if (logoutButton) {
-        logoutButton.addEventListener('click', handleLogout);
+// 5. 【全新】从 Firestore 实时获取并显示分享
+function fetchMemories() {
+    const memoriesCollection = collection(db, "memories");
+    const q = query(memoriesCollection, orderBy("createdAt", "desc")); // 按时间倒序排列
+
+    onSnapshot(q, (querySnapshot) => {
+        memoryFeed.innerHTML = ''; // 清空旧内容
+        querySnapshot.forEach((doc) => {
+            const post = doc.data();
+            const postElement = document.createElement('article');
+            postElement.classList.add('memory-post');
+            
+            // 将 Firestore 的时间戳对象转换为可读日期
+            const postDate = post.createdAt.toDate().toLocaleString('zh-CN');
+
+            postElement.innerHTML = `
+                <p class="author">${post.authorId}</p>
+                <p class="timestamp">${postDate}</p>
+                <p class="content-text">${post.text.replace(/\n/g, '<br>')}</p>
+            `;
+            memoryFeed.appendChild(postElement);
+        });
+    });
+}
+
+
+// --- 事件监听器 (绑定新的函数) ---
+loginButton.addEventListener('click', handleLogin);
+passwordInput.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+        handleLogin(event);
     }
-
-    // 为发布按钮添加事件监听
-    if (shareButton) {
-        shareButton.addEventListener('click', handleShare);
-    }
-
-    // 定期更新进度条和时间（例如每分钟） - 可选
-    // setInterval(updateProgressAndTime, 60000);
 });
+logoutButton.addEventListener('click', handleLogout);
+shareButton.addEventListener('click', handleShare);
+
