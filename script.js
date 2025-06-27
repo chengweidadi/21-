@@ -5,14 +5,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebas
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-// 2. 你的 Firebase 配置 (保持不变)
+// 2. 你的 Firebase 配置 (已更新为你的新项目)
 const firebaseConfig = {
-  apiKey: "AIzaSyCGA3fyot7SRZHLyqfDvGB0OqZZ9NiCJAM",
-  authDomain: "sample-firebase-ai-app-5d3ba.firebaseapp.com",
-  projectId: "sample-firebase-ai-app-5d3ba",
-  storageBucket: "sample-firebase-ai-app-5d3ba.firebasestorage.app",
-  messagingSenderId: "402674375747",
-  appId: "1:402674375747:web:099aaab5d8a2ceff01c8f6"
+  apiKey: "AIzaSyAcFMwadXYhqWNegNDFNu6VDF554Da3ys8",
+  authDomain: "project-473332034526737129.firebaseapp.com",
+  projectId: "project-473332034526737129",
+  storageBucket: "project-473332034526737129.firebasestorage.app",
+  messagingSenderId: "595259703995",
+  appId: "1:595259703995:web:a54f6957f35554ccf05f9e"
 };
 
 // 3. 初始化 Firebase 服务
@@ -199,4 +199,3 @@ passwordInput.addEventListener('keypress', (event) => {
 });
 logoutButton.addEventListener('click', handleLogout);
 shareButton.addEventListener('click', handleShare);
-
