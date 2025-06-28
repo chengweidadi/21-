@@ -1,11 +1,11 @@
-// script.js (稳定登录版)
+// script.js (最终功能版)
 
 // 1. 从 Firebase 的 CDN 引入我们需要的模块
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, getDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-// 2. 你的 Firebase 配置
+// 2. 你的 Firebase 配置 (已更新为你的新项目)
 const firebaseConfig = {
   apiKey: "AIzaSyAcFMwadXYhqWNegNDFNu6VDF554Da3ys8",
   authDomain: "project-473332034526737129.firebaseapp.com",
@@ -20,7 +20,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- DOM 元素获取 ---
+// --- DOM 元素获取 (保持不变) ---
 const loginSection = document.getElementById('login-section');
 const mainContent = document.getElementById('main-content');
 const usernameInput = document.getElementById('username');
@@ -37,7 +37,7 @@ const shareButton = document.getElementById('shareButton');
 const memoryFeed = document.getElementById('memory-feed');
 const memoryImageInput = document.getElementById('memoryImage');
 
-// --- 日期和进度条 ---
+// --- 日期和进度条 (保持不变) ---
 const startDate = new Date('2021-09-01');
 const endDate = new Date('2026-07-01');
 
@@ -69,39 +69,39 @@ function updateFooterYear() {
     }
 }
 
-// --- Firebase 核心功能 ---
+// --- 【全新】Firebase 核心功能 ---
 
-// 1. 监听认证状态变化
-onAuthStateChanged(auth, async (user) => {
+// 1. 监听认证状态变化 (这是整个应用的总开关)
+onAuthStateChanged(auth, user => {
     if (user) {
         // 用户已登录
+        console.log('用户已登录:', user);
         loginSection.classList.add('hidden');
         mainContent.classList.remove('hidden');
         logoutButton.classList.remove('hidden');
-        
-        // 从 Firestore 获取学号来显示欢迎信息
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-        const studentId = userDoc.exists() ? userDoc.data().studentId : user.email.split('@')[0];
+        // 从 user.email 中提取学号，例如 "217802201@example.com" -> "217802201"
+        const studentId = user.email.split('@')[0];
         if (welcomeUserSpan) welcomeUserSpan.textContent = `欢迎，${studentId}`;
 
         // 初始化主页内容
         updateProgressAndTime();
         updateFooterYear();
-        fetchMemories();
+        fetchMemories(); // 登录后开始获取分享内容
     } else {
         // 用户未登录或已登出
+        console.log('用户未登录');
         mainContent.classList.add('hidden');
+        logoutButton.classList.add('hidden');
         loginSection.classList.remove('hidden');
         if (welcomeUserSpan) welcomeUserSpan.textContent = '';
-        memoryFeed.innerHTML = '';
+        memoryFeed.innerHTML = ''; // 清空分享内容
     }
 });
 
-// 2. 处理登录
+// 2. 【全新】处理登录
 async function handleLogin(event) {
     event.preventDefault();
-    loginError.textContent = '';
+    loginError.textContent = ''; // 清空之前的错误
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
 
@@ -115,6 +115,7 @@ async function handleLogin(event) {
 
     try {
         await signInWithEmailAndPassword(auth, email, password);
+        // 登录成功，onAuthStateChanged 会自动处理后续UI变化
     } catch (error) {
         console.error("登录失败:", error.code);
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -125,10 +126,11 @@ async function handleLogin(event) {
     }
 }
 
-// 3. 处理登出
+// 3. 【全新】处理登出
 async function handleLogout() {
     try {
         await signOut(auth);
+        // 登出成功，onAuthStateChanged 会自动处理后续UI变化
         usernameInput.value = '';
         passwordInput.value = '';
     } catch (error) {
@@ -136,7 +138,7 @@ async function handleLogout() {
     }
 }
 
-// 4. 处理发布分享 (保存到 Firestore)
+// 4. 【全新】处理发布分享 (保存到 Firestore)
 async function handleShare(event) {
     event.preventDefault();
     const text = memoryTextInput.value.trim();
@@ -148,34 +150,33 @@ async function handleShare(event) {
     }
 
     try {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-        const studentId = userDoc.exists() ? userDoc.data().studentId : user.email;
-
+        // "memories" 是数据库里集合的名称
         await addDoc(collection(db, "memories"), {
             text: text,
-            authorId: studentId,
-            createdAt: new Date()
+            authorId: user.email.split('@')[0], // 只保存学号
+            createdAt: new Date() // 使用服务器时间戳更佳，但本地时间也行
         });
-        memoryTextInput.value = '';
-        memoryImageInput.value = null;
+        memoryTextInput.value = ''; // 清空输入框
+        memoryImageInput.value = null; // 清空文件选择
     } catch (error) {
         console.error("发布失败: ", error);
         alert('发布失败，请检查网络后重试。');
     }
 }
 
-// 5. 从 Firestore 实时获取并显示分享
+// 5. 【全新】从 Firestore 实时获取并显示分享
 function fetchMemories() {
     const memoriesCollection = collection(db, "memories");
-    const q = query(memoriesCollection, orderBy("createdAt", "desc"));
+    const q = query(memoriesCollection, orderBy("createdAt", "desc")); // 按时间倒序排列
 
     onSnapshot(q, (querySnapshot) => {
-        memoryFeed.innerHTML = '';
+        memoryFeed.innerHTML = ''; // 清空旧内容
         querySnapshot.forEach((doc) => {
             const post = doc.data();
             const postElement = document.createElement('article');
             postElement.classList.add('memory-post');
+            
+            // 将 Firestore 的时间戳对象转换为可读日期
             const postDate = post.createdAt.toDate().toLocaleString('zh-CN');
 
             postElement.innerHTML = `
@@ -188,7 +189,8 @@ function fetchMemories() {
     });
 }
 
-// --- 事件监听器 ---
+
+// --- 事件监听器 (绑定新的函数) ---
 loginButton.addEventListener('click', handleLogin);
 passwordInput.addEventListener('keypress', (event) => {
     if (event.key === 'Enter') {
