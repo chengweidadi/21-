@@ -4,48 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>21工业机器人高职2班</title>
+    <!-- 链接 CSS 文件 -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 登录与注册界面 -->
+    <!-- 登录界面 -->
     <section id="login-section">
         <div class="container">
-            <h2 id="form-title">同学请登录</h2>
-
-            <!-- 用户名/学号输入 -->
+            <h2>同学请登录</h2>
             <div class="form-group">
                 <label for="username">学号:</label>
                 <input type="text" id="username" name="username" required placeholder="请输入你的学号">
             </div>
-            
-            <!-- 邮箱输入 (只在注册时显示) -->
-            <div class="form-group hidden" id="email-group">
-                <label for="email">真实邮箱:</label>
-                <input type="email" id="email" name="email" required placeholder="用于接收验证邮件和找回密码">
-            </div>
-
-            <!-- 密码输入 -->
             <div class="form-group">
                 <label for="password">密码:</label>
-                <input type="password" id="password" name="password" required placeholder="至少需要6位">
+                <input type="password" id="password" name="password" required placeholder="请输入密码">
             </div>
-
-            <!-- 确认密码 (只在注册时显示) -->
-            <div class="form-group hidden" id="confirm-password-group">
-                <label for="confirm-password">确认密码:</label>
-                <input type="password" id="confirm-password" name="confirm-password" required placeholder="请再次输入密码">
-            </div>
-
-            <button id="auth-button">登录</button>
-            <p id="form-error"></p> <!-- 显示错误信息 -->
-            
-            <!-- 切换链接 -->
-            <p id="auth-switch">还没有账户？<a href="#">立即注册</a></p>
+            <button id="loginButton">登录</button>
+            <p id="login-error"></p> <!-- 显示登录错误信息 -->
         </div>
     </section>
 
-    <!-- 主内容区域 (保持不变) -->
+    <!-- 主内容区域，默认隐藏 -->
     <div id="main-content" class="hidden">
         <div class="container">
             <header>
@@ -80,9 +61,10 @@
                 <p>© <span id="currentYear"></span> 21工业机器人高职2班 版权所有</p>
                 <p>为我们独一无二的五年喝彩！</p>
             </footer>
-        </div>
-    </div>
+        </div> <!-- /.container for main content -->
+    </div> <!-- /#main-content -->
 
+    <!-- 引入 JavaScript 文件，确保在 body 结束前引入 -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
